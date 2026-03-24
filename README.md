@@ -162,8 +162,4 @@ arxiv-lens/
 └── requirements.txt
 ```
 
----
 
-## License
-
-MIT
