@@ -178,8 +178,8 @@ data: {"type": "token", "text": "Based on..."}
 data: {"type": "done"}
 ```
 
+---
 
-<<<<<<< HEAD
 ## Environment Variables
 
 | Variable | Description | Default |
@@ -206,5 +206,3 @@ docker compose logs -f app
 # Stop (data is preserved)
 docker compose down
 ```
-=======
->>>>>>> 87b1dcaf3ab18a32e72e7c3fbf601005ac75d5fe
