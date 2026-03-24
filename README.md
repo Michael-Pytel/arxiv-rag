@@ -1,18 +1,31 @@
-# arxiv lens
+# arXiv RAG
 
-A semantic search and RAG chat interface over ~288k AI/ML papers from arxiv. Ask research questions in natural language, get grounded answers with inline citations that link directly to the source papers.
+![Python](https://img.shields.io/badge/Python-3.11.8-blue?logo=python&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Papers](https://img.shields.io/badge/Papers-288%2C306-red)
 
-![arxiv lens demo](https://i.imgur.com/placeholder.png)
+A conversational research assistant for exploring AI and ML literature. Ask anything from broad survey questions to specific technique comparisons and get precise, source-grounded answers from real arxiv papers.
+
+---
+
+## Screenshots
+
+**Research chat with citations**
+
+![Chat with citations](docs/screenshots/chat.png)
+
+---
 
 ## Features
 
-- **Semantic search** over 288k AI, ML, and computer vision papers via Qdrant + OpenAI embeddings
-- **Streaming RAG chat** powered by Claude Sonnet — answers arrive token by token
-- **Inline citations** — paper titles cited as clickable chips (`[1]`, `[2]`) that highlight the corresponding card in the right panel
-- **Hover cross-linking** — hovering a citation scrolls the paper panel to that card; hovering a card highlights all its citations in chat
+- **Semantic search** over 288,306 AI, ML, and computer vision papers via Qdrant + OpenAI embeddings
+- **Streaming RAG chat** powered by Claude Sonnet 
+- **Inline citations** — papers cited as clickable numbered chips that open the source and highlight the corresponding card in the results panel
+- **Hover cross-linking** — hovering a citation scrolls the results panel to that paper; hovering a paper card highlights all its mentions in chat
 - **Category + result count filters** in the sidebar
 - **Find similar papers** — triggers a new semantic search from any retrieved paper
-- Fully dockerized — one command to run everything
+- **Fully dockerized** — one command to run everything
 
 ## Stack
 
@@ -23,6 +36,7 @@ A semantic search and RAG chat interface over ~288k AI/ML papers from arxiv. Ask
 | Vector DB | Qdrant |
 | Backend | FastAPI + Server-Sent Events |
 | Frontend | Vanilla JS + marked.js |
+| Runtime | Python 3.11.8 |
 | Containerization | Docker Compose |
 
 ## Project Structure
@@ -46,6 +60,8 @@ arxiv-rag/
     ├── ingest.py           # Embed and load papers into Qdrant
     └── deduplicate.py      # Deduplicate .jsonl files by paper ID
 ```
+
+---
 
 ## Quickstart
 
@@ -77,16 +93,17 @@ QDRANT_URL=http://qdrant:6333
 
 ### 3. Restore the Qdrant snapshot
 
-Download the pre-built snapshot (~2.4 GB) with 288k indexed papers:
+Download the pre-built snapshot (~2.4 GB) with all 288,306 indexed papers:
 
-**[Download snapshot from Google Drive](https://drive.google.com/file/d/1xOWx7w-dIEhv3JQedXij4MFSsfaHicKr/view?usp=sharing)**
+**[Download snapshot from Google Drive](https://drive.google.com/file/d/1xOWx7w-dIEhv3JQedXij4MFSsfaHicKr/view?usp=drive_link)**
 
-Start Qdrant and restore:
+Start Qdrant and restore the snapshot:
+
 ```bash
 # Start Qdrant
 docker compose up qdrant -d
 
-# Wait a few seconds, then restore the snapshot
+# Restore (Linux / macOS / Git Bash)
 curl -X POST "http://localhost:6333/collections/papers/snapshots/upload?collection_name=papers" \
   -H "Content-Type: multipart/form-data" \
   -F "snapshot=@papers-3973220066948834-2026-03-24-00-01-01.snapshot"
@@ -111,11 +128,13 @@ Open **http://localhost:8000** in your browser.
 
 ## Building the index from scratch
 
-If you prefer to index your own papers instead of using the snapshot:
+If you prefer to index your own data instead of using the snapshot:
 
-### 1. Fetch papers from arxiv
+### 1. Get the dataset
 
-Collect papers in `.jsonl` format with the following fields per line:
+The index was built from the [arxiv AI Research Papers Dataset](https://www.kaggle.com/datasets/umerhaddii/arxiv-ai-research-papers-dataset) on Kaggle. Download the `.jsonl` files and place them in the `data/` directory.
+
+Each line should have the following structure:
 ```json
 {
   "id": "2212.04285v3",
@@ -130,9 +149,9 @@ Collect papers in `.jsonl` format with the following fields per line:
 }
 ```
 
-Place `.jsonl` files in the `data/` directory.
+### 2. Deduplicate
 
-### 2. Deduplicate (optional)
+The original dataset contains over 100,000 duplicate entries across versions. The deduplication script removes them, keeping the latest version of each paper and merging category metadata:
 
 ```bash
 python scripts/deduplicate.py --data-dir data/ --output data/papers_deduped.jsonl
@@ -141,13 +160,23 @@ python scripts/deduplicate.py --data-dir data/ --output data/papers_deduped.json
 ### 3. Ingest into Qdrant
 
 ```bash
-# Make sure Qdrant is running first
+# Start Qdrant first
 docker compose up qdrant -d
 
+# Run ingestion
 python scripts/ingest.py --data-dir data/ --reset
 ```
 
-This embeds all papers using `text-embedding-3-small` in batches of 256 and upserts them into Qdrant. Ingestion is resumable — if interrupted, re-run without `--reset` to continue where it left off.
+Ingestion embeds papers using `text-embedding-3-small` in batches of 256 and upserts them into Qdrant. It is resumable — if interrupted, re-run without `--reset` to continue where it left off.
+
+---
+
+## Limitations
+
+- **Date range** — covers papers published between **December 2022 and March 2026** only
+- **Categories** — limited to 6 arxiv categories: `cs.LG`, `cs.CV`, `cs.CL`, `cs.AI`, `cs.NE`, `cs.IR` and `stat.ML`
+- **No real-time updates** — the index is static and does not pull new papers automatically
+- **Abstract only** — papers are indexed by title and abstract, not full text
 
 ---
 
@@ -185,7 +214,7 @@ data: {"type": "done"}
 | Variable | Description | Default |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | Anthropic API key | required |
-| `OPENAI_API_KEY` | OpenAI API key (embeddings) | required |
+| `OPENAI_API_KEY` | OpenAI API key (embeddings) | required only for ingestion |
 | `QDRANT_URL` | Qdrant connection URL | `http://localhost:6333` |
 | `DEBUG` | Enable uvicorn reload | `false` |
 
@@ -206,3 +235,26 @@ docker compose logs -f app
 # Stop (data is preserved)
 docker compose down
 ```
+
+---
+
+## Contributing
+
+Contributions are welcome. Some ideas for where to take this further:
+
+- **More categories** — extend the index with `cs.RO`, `cs.CR`, `eess.IV` and others
+- **Date range** — pull newer papers and re-ingest to extend coverage beyond March 2026
+- **Full-text indexing** — fetch and chunk full PDFs instead of abstracts only
+- **Auth layer** — add API key protection before any public deployment
+- **Rate limiting** — protect the `/chat` endpoint from abuse
+
+To contribute, fork the repo, create a feature branch, and open a pull request.
+
+---
+
+## Dataset Attribution
+
+The paper data is sourced from the [arxiv AI Research Papers Dataset](https://www.kaggle.com/datasets/umerhaddii/arxiv-ai-research-papers-dataset) on Kaggle.
+
+> If using this dataset in research, please credit arXiv and the original paper authors. All content belongs to the respective authors and is made available by arXiv under its usage policies.
+
