@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>arxiv lens</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/frontend/styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="logo">
+      <div class="logo-name">arxiv lens</div>
+      <div class="logo-sub">semantic paper search</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-card-num" id="paper-count">—</div>
+      <div class="stat-card-label">papers indexed</div>
+    </div>
+
+    <div>
+      <div class="section-label">Filters</div>
+      <div class="filter-group">
+        <div>
+          <label>Category</label>
+          <select id="filter-category">
+            <option value="">All categories</option>
+            <option value="cs.LG">cs.LG — Machine Learning</option>
+            <option value="cs.CV">cs.CV — Computer Vision</option>
+            <option value="cs.CL">cs.CL — Computation & Language</option>
+            <option value="cs.AI">cs.AI — Artificial Intelligence</option>
+            <option value="cs.NE">cs.NE — Neural & Evolutionary</option>
+            <option value="cs.IR">cs.IR — Information Retrieval</option>
+            <option value="stat.ML">stat.ML — Statistics ML</option>
+          </select>
+        </div>
+        <div>
+          <div class="range-row">
+            <label style="margin:0">Results</label>
+            <span class="range-val" id="k-val">8</span>
+          </div>
+          <input type="range" id="filter-k" min="3" max="20" value="8"
+                 oninput="document.getElementById('k-val').textContent=this.value">
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Try asking</div>
+      <div class="examples">
+        <div class="example-item" onclick="setInput('What are recent approaches to making LLMs more efficient?')">LLM efficiency methods</div>
+        <div class="example-item" onclick="setInput('Vision transformers for object detection')">Vision transformers</div>
+        <div class="example-item" onclick="setInput('How does LoRA compare to full fine-tuning?')">LoRA vs fine-tuning</div>
+        <div class="example-item" onclick="setInput('Diffusion models for image generation')">Diffusion models</div>
+        <div class="example-item" onclick="setInput('Reinforcement learning from human feedback')">RLHF techniques</div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">Built with FastAPI · Qdrant · Claude</div>
+  </aside>
+
+  <!-- Chat -->
+  <main class="chat-panel">
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
+          <svg viewBox="0 0 16 16">
+            <line x1="2" y1="4" x2="14" y2="4"/>
+            <line x1="2" y1="8" x2="10" y2="8"/>
+            <line x1="2" y1="12" x2="14" y2="12"/>
+          </svg>
+        </button>
+        <span class="chat-header-label">Research chat</span>
+      </div>
+      <button class="sidebar-toggle papers-toggle" onclick="togglePapers()" title="Toggle papers panel">
+        <svg viewBox="0 0 16 16">
+          <rect x="2" y="2" width="5" height="12" rx="1.5"/>
+          <line x1="10" y1="5" x2="14" y2="5"/>
+          <line x1="10" y1="8" x2="14" y2="8"/>
+          <line x1="10" y1="11" x2="14" y2="11"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="chat-messages" id="chat-messages">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">◎</div>
+        <div class="empty-title">Search 288k AI papers</div>
+        <div class="empty-sub">Ask anything — get grounded answers with real citations and links</div>
+        <div class="suggestion-pills">
+          <span class="suggestion-pill" onclick="setInput('Explain how attention mechanisms work')">Attention mechanisms</span>
+          <span class="suggestion-pill" onclick="setInput('What is knowledge distillation?')">Knowledge distillation</span>
+          <span class="suggestion-pill" onclick="setInput('Recent work on multimodal models')">Multimodal models</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-area-inner">
+        <div class="input-row">
+          <textarea id="chat-input" rows="1" placeholder="Ask about research papers..."
+            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">
+            <svg viewBox="0 0 16 16"><path d="M2 8l12-5-4 5 4 5z"/></svg>
+          </button>
+        </div>
+        <div class="input-hint">Enter to send · Shift+Enter for new line · AI responses may contain errors — always verify with the original source</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Papers -->
+  <aside class="papers-panel">
+    <div class="papers-header">
+      <span class="papers-header-label">Retrieved papers</span>
+      <span class="papers-count" id="papers-count">0</span>
+    </div>
+
+    <div class="papers-list" id="papers-list">
+      <div class="papers-empty">Papers retrieved for each query will appear here</div>
+    </div>
+
+    <div class="recommend-section" id="recommend-section" style="display:none">
+      <div class="recommend-label">Find similar</div>
+      <select class="recommend-select" id="recommend-select"></select>
+      <button class="recommend-btn" onclick="getRecommendations()">find similar papers →</button>
+    </div>
+  </aside>
+
+</div>
+
+<script src="/frontend/main.js"></script>
+</body>
+</html>
