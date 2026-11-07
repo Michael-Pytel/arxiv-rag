@@ -74,7 +74,7 @@ arxiv-rag/
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/yourusername/arxiv-rag.git
+git clone https://github.com/Michael-Pytel/arxiv-rag.git
 cd arxiv-rag
 ```
 
