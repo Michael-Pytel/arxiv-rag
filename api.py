@@ -115,13 +115,14 @@ async def chat(req: ChatRequest):
         # Then stream the LLM response token by token
         with client.messages.stream(
             model=MODEL,
-            max_tokens=1024,
+            max_tokens=2048,
             system=SYSTEM_PROMPT,
             messages=messages,
         ) as stream:
             for text in stream.text_stream:
                 yield f"data: {json.dumps({'type': 'token', 'text': text})}\n\n"
+            stop_reason = stream.get_final_message().stop_reason
 
-        yield f"data: {json.dumps({'type': 'done'})}\n\n"
+        yield f"data: {json.dumps({'type': 'done', 'stop_reason': stop_reason})}\n\n"
 
     return StreamingResponse(generate(), media_type="text/event-stream")

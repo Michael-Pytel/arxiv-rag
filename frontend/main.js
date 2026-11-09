@@ -230,6 +230,10 @@ async function sendMessage() {
               bubbleEl.classList.remove('streaming');
               bubbleEl.innerHTML = renderMarkdown(replyText);
               bindCitationEvents(bubbleEl, bubbleGen);
+              if (ev.stop_reason === 'max_tokens') {
+                bubbleEl.insertAdjacentHTML('beforeend',
+                  '<p style="opacity:.6;font-style:italic">(response truncated: hit the length limit)</p>');
+              }
               bubbleEl.removeAttribute('id');
             }
             history.push({ role: 'user', content: msg });
