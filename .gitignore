@@ -65,3 +65,6 @@ htmlcov/
 
 # Distribution
 *.whl
+
+# claude
+.claude/
