@@ -31,7 +31,7 @@ A conversational research assistant for exploring AI and ML literature. Ask anyt
 
 | Layer | Technology |
 |---|---|
-| LLM | Claude Sonnet (`claude-sonnet-4-20250514`) |
+| LLM | Claude Sonnet 5.5 |
 | Embeddings | OpenAI `text-embedding-3-small` (1536 dims) |
 | Vector DB | Qdrant |
 | Backend | FastAPI + Server-Sent Events |
